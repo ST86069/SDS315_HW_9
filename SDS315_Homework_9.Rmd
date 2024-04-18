@@ -1,0 +1,142 @@
+---
+title: "Homework 9"
+author: "Shreyasi Tamhane, eid: syt333, GitHub Repo: https://github.com/ST86069/SDS315_HW_9.git"
+date: "2024-04-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, results = 'hide', echo = FALSE, warning=FALSE, message=FALSE}
+# import libraries
+library(ggplot2)
+library(tidyverse)
+library(mosaic)
+library(MatchIt)
+library(moderndive)
+library(kableExtra)
+# import datasets
+turnout <- read.csv("turnout.csv")
+solder <- read.csv("solder.csv")
+```
+
+### Problem 1: Get out the vote
+
+#### Part A
+
+```{r, echo=FALSE, results = 'hide'}
+prop(voted1998~GOTV_call, data=turnout, success = 1)
+
+prop.test(voted1998~GOTV_call, data=turnout, success = 1)
+```
+
+The proportion of those who received a GOVT call and voted in 1998, is around 64.78%, while the proportion of those who did not receive the GOVT call but did vote in 1998, is around 44.42%.
+
+The large-sample 95% confidence interval for the difference in these two proportions is (-0.2659, -0.1411).
+
+#### Part B
+
+```{r, echo=FALSE, results = 'hide'}
+# AGE confounder
+mean(AGE~GOTV_call + voted1998, data=turnout)
+
+# voted1996 confounder
+mean(voted1996~GOTV_call + voted1998, data=turnout)
+
+# MAJORPTY confounder
+mean(MAJORPTY~GOTV_call + voted1998, data=turnout)
+
+```
+
+The mean for the age, voted1996, and MAJORPTY variables, when a person received a GOTV call and voted are the highest mean out of all of the outcomes, at approximately 61.5188, 0.8563, and 0.8313, respectively.
+
+#### Part C
+
+```{r, echo=FALSE, results = 'hide'}
+turnout_matched = matchit(GOTV_call ~ AGE + voted1996 + MAJORPTY,
+                                 data = turnout, ratio=5) %>%
+  match.data
+```
+
+```{r, echo=FALSE, results = 'hide'}
+mean(AGE~GOTV_call, data=turnout_matched)
+mean(voted1996~GOTV_call, data=turnout_matched)
+mean(MAJORPTY~GOTV_call, data=turnout_matched)
+
+# balanced after matching
+
+```
+
+```{r, echo=FALSE, results = 'hide'}
+prop(voted1998~GOTV_call, data=turnout_matched, success = 1)
+
+prop.test(voted1998~GOTV_call, data=turnout_matched, success = 1)
+```
+
+The average age is very similar for the group of people who received the GOTV call and the group who did not receive the call; 58.2664 for people who didn't receive the call and 58.3077 for people who did. The average for the voted1996 variable is very similar for the group of people who received the GOTV call and the group who did not receive the call; 0.7126 for people who didn't receive the call and 0.7126 for people who did. The average MAJORPTY variable is very similar for the group of people who received the GOTV call and the group who did not receive the call; 0.8073 for people who didn't receive the call and 0.8016 for people who did. This shows that the confounding variables have been balanced.
+
+The proportion of those who received a GOTV call and voted in 1998, when all the confounding variables are balanced, is around 64.78%, while the proportion of those who did not receive the GOTV call but did vote in 1998, is around 57.41%.
+
+The large-sample 95% confidence interval for the difference in these two proportions is (-0.1418, -0.0056).
+
+As this confidence interval does not contain zero, we can say that the proportion is statistically significant at the 5% level. Based on the difference between the proportions of persons who voted and received the GOTV call and those who voted but didn't receive the call is not that great; there is roughly a seven percent difference. While the GOTV call may have encouraged a few people to vote, it does not seem like it had that much of an effect on the likelihood of voting in the 1998 election.
+
+### Problem 2: Manufacturing flaws in circuit boards
+
+#### Part A
+
+```{r, echo=FALSE}
+ggplot(solder) + 
+  geom_jitter(aes(x=Opening, y=skips), width=0.1)
+```
+
+The jitter plot shows that a smaller size of the opening of the solder gun correlates to a higher number of skips.
+
+```{r, echo=FALSE}
+ggplot(solder) + 
+  geom_jitter(aes(x=Solder, y=skips), width=0.1)
+```
+
+The jitter plot shows that a thinner alloy used for soldering correlates to a higher number of skips.
+
+#### Part B
+
+```{r, echo=FALSE, results = 'hide'}
+# skips reg model
+skips_model = lm(skips ~ Opening + Solder + Opening:Solder, data=solder)
+coef(skips_model) %>%
+  round(0)
+
+# skips confint
+skips_confint = confint(skips_model, level = 0.95) %>% round(0)
+
+# skips estimate, confint tibble
+get_regression_table(skips_model, conf.level = 0.95, digits=2) # using to get more exact vals
+
+# making to organize information neatly
+skips_data <- tibble(
+  Variable = c("Opening - M", "Opening - S", "Solder - Thin", "Opening - M:Solder - Thin", "Opening - S:Solder - Thin"),
+  Estimate = c(2.41, 5.13, 2.28, -0.74, 9.65),
+  Confidence_Interval = c("(0.96, 3.85)", "(3.68, 6.57)", "(0.84, 3.72)", "(-2.78, 1.30)", "(7.61, 11.70)")
+)
+```
+
+```{r, echo=FALSE}
+# skips table
+knitr::kable(skips_data, caption = "Estimate and Confidence Interval for Skips") %>% 
+  kable_styling()
+```
+
+#### Part C
+
+The baseline number of skips on the board, when there is no opening or solder thickness to account for, is 0. The main effect for the Opening variable at a Medium opening of the solder gun is around 2.41 skips on a circuit board. The main effect for the Opening variable at a Small opening of the solder gun is approximately 5.13 skips on a circuit board. 
+
+The main effect for the Solder variable when the thinner alloy is used for soldering is around 2.28 skips on a circuit board. 
+
+The interaction effect for a medium Opening and a thin Solder alloy are approximately -0.74 skips on a circuit board. In other words, this interaction produced a smaller amount of skips compared to the amount of skips that these two variables create when they are isolated. The interaction effect for a small Opening and a thin Solder alloy are around 9.65 skips on a circuit board. This interaction significantly increased the amount of skips compared to the amount of skips that these two variables create when isolated.
+
+#### Part D
+
+As the goal is to reduce the number of skips in the manufacturing process, the best combination of Opening size and Solder thickness would be a medium Opening size and a thin Solder thickness. This interaction produced a smaller amount of skips compared to the amount of skips produced when these two variables were isolated.
