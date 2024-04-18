@@ -92,14 +92,14 @@ ggplot(solder) +
   geom_jitter(aes(x=Opening, y=skips), width=0.1)
 ```
 
-The jitter plot shows that the smaller the opening of the solder gun correlates to a higher number of skips.
+The jitter plot shows that a smaller size of the opening of the solder gun correlates to a higher number of skips.
 
 ```{r, echo=FALSE}
 ggplot(solder) + 
   geom_jitter(aes(x=Solder, y=skips), width=0.1)
 ```
 
-The jitter plot shows that the thinner the alloy used for soldering correlates to a higher number of skips.
+The jitter plot shows that a thinner alloy used for soldering correlates to a higher number of skips.
 
 #### Part B
 
